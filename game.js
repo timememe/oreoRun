@@ -1,6 +1,9 @@
 // Глобальные настройки игры
 let language = 'ru';
 let gameSpeed = 2; // Скорость движения объектов
+let laneSeparationTop = 200;    // Разделение полос в верхней части
+let laneSeparationBottom = 200; // Разделение полос в нижней части
+let laneLength = 820; // Длина линии полосы
 
 // Игровые переменные
 let canvas, ctx;
@@ -9,7 +12,8 @@ let render;
 let player;
 let obstacles = [];
 let collectibles = [];
-let lanes = []; // Массив для хранения координат полос
+let lanes = [];     // Массив для хранения координат полос (нижняя часть)
+let topLanes = [];  // Массив для хранения координат полос (верхняя часть)
 let currentLane = 1; // Текущая полоса (0 - левая, 1 - средняя, 2 - правая)
 let score = 0;
 let isGameOver = false;
@@ -41,11 +45,41 @@ const translations = {
     // Добавьте остальные переводы...
 };
 
+// Изображения
+let images = {};
+function preloadImages() {
+    images.player = new Image();
+    images.player.src = 'assets/player.png';
+
+    images.wall = new Image();
+    images.wall.src = 'assets/wall.png';
+
+    images.coin = new Image();
+    images.coin.src = 'assets/coin.png';
+
+    images.milk = new Image();
+    images.milk.src = 'assets/milk.png';
+
+    images.bg = [];
+    for (let i = 1; i <= 9; i++) {
+        images.bg[i] = new Image();
+        images.bg[i].src = `assets/bg${i}.png`;
+    }
+}
+
+// Переменные для фоновой анимации
+let bgFrameIndex = 9; // Начинаем с bg9.png перед стартом игры
+let bgAnimationSpeed = 5; // Скорость смены кадров фона
+let bgAnimationCounter = 0;
+
 // Инициализация игры и событий
 document.addEventListener('DOMContentLoaded', () => {
     // Инициализация canvas
     canvas = document.getElementById('game-canvas');
     ctx = canvas.getContext('2d');
+
+    // Предзагрузка изображений
+    preloadImages();
 
     // Инициализация UI
     initUI();
@@ -64,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Инициализация UI
 function initUI() {
+    bgFrameIndex = 9; // Отображаем bg9.png перед стартом игры
     const lang = translations[language];
     document.getElementById('game-title').innerText = lang.gameTitle;
     document.getElementById('tutorial-text').innerText = lang.tutorialText;
@@ -92,6 +127,7 @@ function initUI() {
 
 // Начать игру
 function startGame() {
+    bgFrameIndex = 1; // Начинаем анимацию фона с bg1.png
     document.getElementById('start-popup').style.display = 'none';
     document.getElementById('game-canvas').style.display = 'block';
     initGame();
@@ -123,15 +159,21 @@ function initGame() {
     });
 
     // Определяем параметры перспективы
-    horizonY = canvas.height / 3; // Горизонт на верхней трети экрана
+    horizonY = canvas.height - laneLength; // Горизонт устанавливается на основе laneLength
     vanishingPointX = canvas.width / 2; // Точка схождения в середине экрана
 
     // Определяем базовые X позиции полос на уровне игрока (нижняя часть экрана)
-    let laneWidth = canvas.width / 5;
     lanes = [
-        vanishingPointX - laneWidth, // Левая полоса
-        vanishingPointX,             // Средняя полоса
-        vanishingPointX + laneWidth  // Правая полоса
+        vanishingPointX - laneSeparationBottom, // Левая полоса
+        vanishingPointX,                        // Средняя полоса
+        vanishingPointX + laneSeparationBottom  // Правая полоса
+    ];
+
+    // Определяем верхние позиции полос на основе laneSeparationTop
+    topLanes = [
+        vanishingPointX - laneSeparationTop, // Левая верхняя полоса
+        vanishingPointX,                     // Средняя верхняя полоса
+        vanishingPointX + laneSeparationTop  // Правая верхняя полоса
     ];
 
     // Создаем игрока
@@ -247,6 +289,10 @@ function createCollectible() {
     let collectibleY = horizonY; // Появляется на линии горизонта
     let collectibleSize = 30;
 
+    // Случайно выбираем тип предмета
+    let types = ['coin', 'milk'];
+    let type = types[Math.floor(Math.random() * types.length)];
+
     let collectible = {
         body: Matter.Bodies.circle(laneX, collectibleY, collectibleSize / 2, {
             label: 'collectible',
@@ -261,7 +307,8 @@ function createCollectible() {
             }
         }),
         laneIndex: laneIndex,
-        size: collectibleSize
+        size: collectibleSize,
+        type: type // 'coin' или 'milk'
     };
 
     // Устанавливаем начальную скорость вниз
@@ -348,19 +395,33 @@ function renderScene() {
     let context = render.context;
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Фон
-    context.fillStyle = '#0058C9';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    // Отрисовка фона сначала
+    context.drawImage(images.bg[bgFrameIndex], 0, 0, canvas.width, canvas.height);
 
     // Отрисовка дороги
     drawRoad(context);
 
     // Отрисовка объектов
-    drawObjects(context, obstacles, '#000');
-    drawObjects(context, collectibles, '#ff0');
+    drawObjects(context, obstacles, 'obstacle');
+    drawObjects(context, collectibles, 'collectible');
 
     // Отрисовка игрока
     drawPlayer(context);
+
+    // Обновляем анимацию фона
+    updateBackgroundAnimation();
+}
+
+// Функция для обновления анимации фона
+function updateBackgroundAnimation() {
+    bgAnimationCounter++;
+    if (bgAnimationCounter >= bgAnimationSpeed) {
+        bgAnimationCounter = 0;
+        bgFrameIndex++;
+        if (bgFrameIndex > 9) {
+            bgFrameIndex = 1;
+        }
+    }
 }
 
 // Функция для отрисовки дороги
@@ -370,8 +431,8 @@ function drawRoad(context) {
     context.beginPath();
     context.moveTo(0, canvas.height);
     context.lineTo(canvas.width, canvas.height);
-    context.lineTo(vanishingPointX + canvas.width / 2, horizonY);
-    context.lineTo(vanishingPointX - canvas.width / 2, horizonY);
+    context.lineTo(getScreenX(topLanes[2], horizonY), horizonY);
+    context.lineTo(getScreenX(topLanes[0], horizonY), horizonY);
     context.closePath();
     context.fill();
 
@@ -380,19 +441,19 @@ function drawRoad(context) {
     context.lineWidth = 2;
     context.setLineDash([20, 40]); // Пунктир: 20px линия, 40px пробел
 
-    // Отрисовываем линии полос
-    for (let i = 1; i < lanes.length; i++) {
+    for (let i = 0; i < lanes.length; i++) {
         context.beginPath();
-        context.moveTo(getScreenX(lanes[i], horizonY), horizonY);
-        context.lineTo(getScreenX(lanes[i], canvas.height), canvas.height);
+        context.moveTo(getScreenX(lanes[i], canvas.height), canvas.height);
+        context.lineTo(getScreenX(topLanes[i], horizonY), horizonY);
         context.stroke();
     }
 
     context.setLineDash([]); // Сброс пунктирной линии
 }
 
+
 // Функция для отрисовки объектов с учетом перспективы
-function drawObjects(context, objectsArray, color) {
+function drawObjects(context, objectsArray, type) {
     for (let obj of objectsArray) {
         let posY = obj.body.position.y;
         if (posY < horizonY || posY > canvas.height) continue;
@@ -402,8 +463,17 @@ function drawObjects(context, objectsArray, color) {
         let objY = posY;
         let size = obj.size * scale;
 
-        context.fillStyle = color;
-        context.fillRect(objX - size / 2, objY - size, size, size);
+        if (type === 'obstacle') {
+            // Отрисовка препятствия
+            context.drawImage(images.wall, objX - size / 2, objY - size, size, size);
+        } else if (type === 'collectible') {
+            // Отрисовка собираемого предмета
+            if (obj.type === 'coin') {
+                context.drawImage(images.coin, objX - size / 2, objY - size, size, size);
+            } else if (obj.type === 'milk') {
+                context.drawImage(images.milk, objX - size / 2, objY - size, size, size);
+            }
+        }
     }
 }
 
@@ -415,8 +485,7 @@ function drawPlayer(context) {
     let playerY = posY;
     let size = 50 * scale;
 
-    context.fillStyle = '#f00';
-    context.fillRect(playerX - size / 2, playerY - size, size, size);
+    context.drawImage(images.player, playerX - size / 2, playerY - size, size, size);
 }
 
 // Функция для вычисления масштаба на основе позиции Y
@@ -464,15 +533,21 @@ function resizeCanvas() {
         render.canvas.height = canvas.height;
 
         // Обновляем параметры перспективы
-        horizonY = canvas.height / 3;
+        horizonY = canvas.height - laneLength;
         vanishingPointX = canvas.width / 2;
 
         // Обновляем позиции полос
-        let laneWidth = canvas.width / 5;
         lanes = [
-            vanishingPointX - laneWidth, // Левая полоса
-            vanishingPointX,             // Средняя полоса
-            vanishingPointX + laneWidth  // Правая полоса
+            vanishingPointX - laneSeparationBottom, // Левая полоса
+            vanishingPointX,                        // Средняя полоса
+            vanishingPointX + laneSeparationBottom  // Правая полоса
+        ];
+
+        // Определяем верхние позиции полос на основе laneSeparationTop
+        topLanes = [
+            vanishingPointX - laneSeparationTop, // Левая верхняя полоса
+            vanishingPointX,                     // Средняя верхняя полоса
+            vanishingPointX + laneSeparationTop  // Правая верхняя полоса
         ];
 
         // Обновляем позицию игрока
@@ -481,3 +556,4 @@ function resizeCanvas() {
         }
     }
 }
+
