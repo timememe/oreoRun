@@ -37,7 +37,7 @@
     let milkCount = 0; // Счётчик собранных milk
     let coinSpawnIntervalId = null; // ID интервала для спавна coin
 
-    const topBackgroundURL = 'assets/logo.png'; 
+    const topBackgroundURL = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/logo.png'; 
 
     // Переводы
     const translations = {
@@ -98,16 +98,16 @@
     let images = {};
     function preloadImages() {
         images.player = new Image();
-        images.player.src = 'assets/player.png';
+        images.player.src = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/player.png';
     
         images.wall = new Image();
-        images.wall.src = 'assets/wall.png';
+        images.wall.src = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/wall.png';
     
         images.coin = new Image();
-        images.coin.src = 'assets/coin.png';
+        images.coin.src = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/coin.png';
     
         images.milk = new Image();
-        images.milk.src = 'assets/milk.png';
+        images.milk.src = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/milk.png';
     
         images.bg = [];
         for (let i = 1; i <= 9; i++) {
@@ -298,13 +298,13 @@
         OBSTACLE_SIZE = canvas.height * OBSTACLE_SIZE_RATIO;
         COLLECTIBLE_SIZE = canvas.height * COLLECTIBLE_SIZE_RATIO;
     
-        console.log('lanes:', lanes);
-        console.log('topLanes:', topLanes);
-        console.log('horizonY:', horizonY);
-        console.log('spawnY:', spawnY);
-        console.log('PLAYER_SIZE:', PLAYER_SIZE);
-        console.log('OBSTACLE_SIZE:', OBSTACLE_SIZE);
-        console.log('COLLECTIBLE_SIZE:', COLLECTIBLE_SIZE);
+        //console.log('lanes:', lanes);
+        //console.log('topLanes:', topLanes);
+        //console.log('horizonY:', horizonY);
+        //console.log('spawnY:', spawnY);
+        //console.log('PLAYER_SIZE:', PLAYER_SIZE);
+        //console.log('OBSTACLE_SIZE:', OBSTACLE_SIZE);
+        //console.log('COLLECTIBLE_SIZE:', COLLECTIBLE_SIZE);
     
         // Создаем игрока
         createPlayer();
@@ -415,7 +415,7 @@
         let obstacleY = spawnY; // Спавн на spawnY
         let obstacleSize = OBSTACLE_SIZE;
     
-        console.log(`Spawning obstacle at lane ${laneIndex} (x: ${laneX}, y: ${obstacleY})`);
+        //console.log(`Spawning obstacle at lane ${laneIndex} (x: ${laneX}, y: ${obstacleY})`);
     
         let obstacle = {
             body: Matter.Bodies.rectangle(laneX, obstacleY, obstacleSize, obstacleSize, {
@@ -786,13 +786,13 @@
             OBSTACLE_SIZE = canvas.height * OBSTACLE_SIZE_RATIO;
             COLLECTIBLE_SIZE = canvas.height * COLLECTIBLE_SIZE_RATIO;
     
-            console.log('lanes:', lanes);
-            console.log('topLanes:', topLanes);
-            console.log('horizonY:', horizonY);
-            console.log('spawnY:', spawnY);
-            console.log('PLAYER_SIZE:', PLAYER_SIZE);
-            console.log('OBSTACLE_SIZE:', OBSTACLE_SIZE);
-            console.log('COLLECTIBLE_SIZE:', COLLECTIBLE_SIZE);
+            //console.log('lanes:', lanes);
+            //console.log('topLanes:', topLanes);
+            //console.log('horizonY:', horizonY);
+            //console.log('spawnY:', spawnY);
+            //console.log('PLAYER_SIZE:', PLAYER_SIZE);
+            //console.log('OBSTACLE_SIZE:', OBSTACLE_SIZE);
+            //console.log('COLLECTIBLE_SIZE:', COLLECTIBLE_SIZE);
     
             // Обновляем позицию игрока
             if (player) {
