@@ -3,16 +3,16 @@ let language = 'ru';
 let gameSpeed = 0.1; // Скорость движения объектов
 
 // Разделение полос
-let laneSeparationTopRatio = 0.075;    // 5% от ширины экрана
-let laneSeparationBottomRatio = 0.2; // 10% от ширины экрана
+let laneSeparationTopRatio = 0.075;    // 7.5% от ширины экрана
+let laneSeparationBottomRatio = 0.2; // 20% от ширины экрана
 
 // Длина линии полосы как доля от высоты экрана
-let laneLengthRatio = 0.6275; // 80% от высоты экрана
+let laneLengthRatio = 0.6275; // 62.75% от высоты экрана
 
 // Глобальные переменные для размеров текстур (как доля от высоты экрана)
-let PLAYER_SIZE_RATIO = 0.06;       // 7% от высоты экрана
+let PLAYER_SIZE_RATIO = 0.06;       // 6% от высоты экрана
 let OBSTACLE_SIZE_RATIO = 0.06;    // 6% от высоты экрана
-let COLLECTIBLE_SIZE_RATIO = 0.04; // 4% от высоты экрана
+let COLLECTIBLE_SIZE_RATIO = 0.1; // 10% от высоты экрана
 
 // Игровые переменные
 let canvas, ctx;
@@ -32,6 +32,10 @@ let horizonY; // Y-координата горизонта
 let vanishingPointX; // X-координата точки схождения (середина экрана)
 let spawnY; // Y-координата точки спавна объектов
 
+// Дополнительные переменные
+let milkCount = 0; // Счётчик собранных milk
+let coinSpawnIntervalId = null; // ID интервала для спавна coin
+
 const topBackgroundURL = 'assets/logo.png'; 
 
 // Переводы
@@ -48,12 +52,12 @@ const translations = {
     },
     ru: {
         gameTitle: "Инструкция",
-        tutorialText: "Избегайте препятствий и соберите предметы! \n Используйте стрелки для смены полосы.",
+        tutorialText: "Избегайте препятствий и пройдите 3 контрольные арки! \n Используйте стрелки для смены полосы.",
         startGame: "Начать игру",
         victory: "Вы выиграли!",
         defeat: "Не вышло, попробуйте снова!",
         restartGame: "Начать заново",
-        score: "Счет: \n",
+        score: "Арки: \n",
         backButtonText: "Назад"
     },
     // Добавьте остальные переводы...
@@ -137,7 +141,22 @@ function initUI() {
         scoreElement.style.textShadow = '1px 1px 2px #000';
         document.getElementById('game-container').appendChild(scoreElement);
     }
-    scoreElement.innerText = lang.score + '0';
+    scoreElement.innerText = translations[language].score + '0';
+
+    // Создаем элемент для отображения таймера (если необходимо)
+    let timerElement = document.getElementById('timer-value');
+    if (!timerElement) {
+        timerElement = document.createElement('div');
+        timerElement.id = 'timer-value';
+        timerElement.style.position = 'absolute';
+        timerElement.style.top = '10px';
+        timerElement.style.right = '10px';
+        timerElement.style.color = '#fff';
+        timerElement.style.fontSize = '24px';
+        timerElement.style.textShadow = '1px 1px 2px #000';
+        document.getElementById('game-container').appendChild(timerElement);
+    }
+    timerElement.innerText = '1:00'; // Начальное значение (если используется)
 
     let topBackground = document.getElementById('top-background');
     if (!topBackground) {
@@ -154,23 +173,25 @@ function initUI() {
     }
 }
 
+let timeLeft = 60; // Время игры в секундах
+let gameTimer = null;
+
+// Функция запуска таймера игры
 function startTimer() {
-    timeLeft = 120;
+    timeLeft = 60;
     updateTimerDisplay();
     gameTimer = setInterval(function() {
         timeLeft--;
         if (timeLeft <= 0) {
             clearInterval(gameTimer);
-            isGameOver = true;
             endGame(false);
-            Matter.Render.stop(render);
-            Matter.Engine.clear(engine);
         } else {
             updateTimerDisplay();
         }
     }, 1000);
 }
 
+// Обновление отображения таймера
 function updateTimerDisplay() {
     let minutes = Math.floor(timeLeft / 60);
     let seconds = timeLeft % 60;
@@ -185,12 +206,18 @@ function startGame() {
     document.getElementById('game-canvas').style.display = 'block';
     initGame();
     startTimer();
+
+    // Запускаем интервал для спавна coin каждые 10 секунд
+    coinSpawnIntervalId = setInterval(() => {
+        createCollectible('coin');
+    }, 10000); // 10000 мс = 10 секунд
 }
 
 // Инициализация игры
 function initGame() {
     isGameOver = false;
     score = 0;
+    milkCount = 0;
     obstacles = [];
     collectibles = [];
     currentLane = 1; // Начинаем с центральной полосы
@@ -240,13 +267,13 @@ function initGame() {
     OBSTACLE_SIZE = canvas.height * OBSTACLE_SIZE_RATIO;
     COLLECTIBLE_SIZE = canvas.height * COLLECTIBLE_SIZE_RATIO;
 
-    //console.log('lanes:', lanes);
-    //console.log('topLanes:', topLanes);
-    //console.log('horizonY:', horizonY);
-    //console.log('spawnY:', spawnY);
-    //console.log('PLAYER_SIZE:', PLAYER_SIZE);
-    //console.log('OBSTACLE_SIZE:', OBSTACLE_SIZE);
-    //console.log('COLLECTIBLE_SIZE:', COLLECTIBLE_SIZE);
+    console.log('lanes:', lanes);
+    console.log('topLanes:', topLanes);
+    console.log('horizonY:', horizonY);
+    console.log('spawnY:', spawnY);
+    console.log('PLAYER_SIZE:', PLAYER_SIZE);
+    console.log('OBSTACLE_SIZE:', OBSTACLE_SIZE);
+    console.log('COLLECTIBLE_SIZE:', COLLECTIBLE_SIZE);
 
     // Создаем игрока
     createPlayer();
@@ -267,7 +294,7 @@ function initGame() {
 function createPlayer() {
     let laneIndex = currentLane;
     let laneX = lanes[laneIndex];
-    let playerY = canvas.height - (canvas.height * 0.2); // 10% от высоты экрана
+    let playerY = canvas.height - (canvas.height * 0.2); // 20% от высоты экрана
     player = Matter.Bodies.rectangle(laneX, playerY, PLAYER_SIZE, PLAYER_SIZE, {
         label: 'player',
         isStatic: false,
@@ -315,25 +342,49 @@ function gameLoop() {
     });
 
     // Генерируем новые препятствия и предметы
-    if (Math.random() < 0.02) {
-        createObstacle();
+    // Создание препятствий так, чтобы всегда была возможность пройти по одной из линий
+    if (Math.random() < 0.01) { // Вероятность появления препятствия
+        createObstacles();
     }
-    if (Math.random() < 0.01) {
-        createCollectible();
+
+    // Генерация 'milk' случайным образом
+    if (Math.random() < 0.015) { // Настройте вероятность по желанию
+        createCollectible('milk');
     }
 
     // Увеличиваем сложность со временем
     //gameSpeed += 0.001;
 }
 
-// Создание препятствия
-function createObstacle() {
-    let laneIndex = Math.floor(Math.random() * lanes.length);
-    let laneX = lanes[laneIndex]; // Спавн на верхней линии
+// Создание препятствий с гарантией, что хотя бы одна полоса свободна
+function createObstacles() {
+    // Решаем, сколько полос блокировать: 1 или 2
+    let lanesToBlock = Math.random() < 0.5 ? 1 : 1;
+
+    // Выбираем случайные полосы для блокировки, оставляя минимум одну полосу свободной
+    let availableLanes = [0, 1, 2];
+    let blockedLanes = [];
+
+    for (let i = 0; i < lanesToBlock; i++) {
+        if (availableLanes.length === 0) break;
+        let randomIndex = Math.floor(Math.random() * availableLanes.length);
+        let lane = availableLanes.splice(randomIndex, 1)[0];
+        blockedLanes.push(lane);
+    }
+
+    // Создаем препятствия на выбранных полосах
+    blockedLanes.forEach(laneIndex => {
+        createObstacle(laneIndex);
+    });
+}
+
+// Создание одного препятствия на указанной полосе
+function createObstacle(laneIndex) {
+    let laneX = lanes[laneIndex]; // Используем lanes для физической позиции
     let obstacleY = spawnY; // Спавн на spawnY
     let obstacleSize = OBSTACLE_SIZE;
 
-    //console.log(`Spawning obstacle at lane ${laneIndex} (x: ${laneX}, y: ${obstacleY})`);
+    console.log(`Spawning obstacle at lane ${laneIndex} (x: ${laneX}, y: ${obstacleY})`);
 
     let obstacle = {
         body: Matter.Bodies.rectangle(laneX, obstacleY, obstacleSize, obstacleSize, {
@@ -359,19 +410,40 @@ function createObstacle() {
     obstacles.push(obstacle);
 }
 
-// Создание собираемого предмета
-function createCollectible() {
-    let laneIndex = Math.floor(Math.random() * lanes.length);
-    let laneX = lanes[laneIndex]; // Спавн на верхней линии
-    let collectibleY = spawnY; // Спавн на spawnY
+// Создание собираемого предмета ('coin' или 'milk')
+function createCollectible(type) {
+    // Определяем доступные полосы (не заблокированные препятствиями)
+    let availableLaneIndices = [0, 1, 2].filter(index => !obstacles.some(obstacle => obstacle.laneIndex === index));
+
+    if (availableLaneIndices.length === 0) {
+        // Нет доступных полос для спавна коллекционного объекта
+        return;
+    }
+
+    // Случайно выбираем полосу из доступных
+    let laneIndex = availableLaneIndices[Math.floor(Math.random() * availableLaneIndices.length)];
+    let laneX = lanes[laneIndex];
+    let collectibleY = spawnY;
     let collectibleSize = COLLECTIBLE_SIZE;
 
-    // Случайно выбираем тип предмета
-    let types = ['coin', 'milk'];
-    let type = types[Math.floor(Math.random() * types.length)];
+    if (type === 'coin') {
+        // Дополнительная логика для 'coin', если необходимо
+    } else if (type === 'milk') {
+        // Дополнительная логика для 'milk', если необходимо
+    }
 
-    //console.log(`Spawning collectible (${type}) at lane ${laneIndex} (x: ${laneX}, y: ${collectibleY})`);
+    // Проверяем, нет ли уже коллекционного объекта на этой полосе рядом со spawnY
+    let isClear = collectibles.every(c => {
+        if (c.laneIndex !== laneIndex) return true;
+        return Math.abs(c.body.position.y - collectibleY) > c.size;
+    });
 
+    if (!isClear) {
+        // Уже есть коллекционный объект на этой полосе рядом со spawnY
+        return;
+    }
+
+    // Создаём коллекционный объект
     let collectible = {
         body: Matter.Bodies.circle(laneX, collectibleY, collectibleSize / 2, {
             label: 'collectible',
@@ -387,12 +459,13 @@ function createCollectible() {
         }),
         laneIndex: laneIndex,
         size: collectibleSize,
-        type: type // 'coin' или 'milk'
+        type: type
     };
 
     // Устанавливаем начальную скорость вниз
     Matter.Body.setVelocity(collectible.body, { x: 0, y: gameSpeed });
 
+    // Добавляем в мир и массив коллекционных объектов
     Matter.World.add(world, collectible.body);
     collectibles.push(collectible);
 }
@@ -428,10 +501,34 @@ function handleCollision(event) {
             if (otherBody.label === 'obstacle') {
                 // Столкновение с препятствием
                 endGame(false);
+                score = 0;
             } else if (otherBody.label === 'collectible') {
-                // Сбор предмета
-                score++;
-                updateScore();
+                let collectible = collectibles.find(c => c.body === otherBody);
+                if (!collectible) continue; // Защита от ошибок
+
+                if (collectible.type === 'coin') {
+                    // Сбор 'coin' дает очки
+                    score++;
+                    updateScore();
+                } else if (collectible.type === 'milk') {
+                    // Сбор 'milk' увеличивает счетчик и может спавнить бонусный 'coin'
+                    milkCount++;
+                    updateMilkCount();
+
+                    // Случайно спавнить бонусный 'coin' с вероятностью 10%
+                    if (Math.random() < 0.1) { // 10% вероятность
+                        createCollectible('coin');
+                    }                    
+    
+                    // Если собрали 30 'milk', спавним дополнительный 'coin' и сбрасываем счетчик
+                    if (milkCount >= 30) {
+                        createCollectible('coin');
+                        milkCount = 0;
+                        updateMilkCount();
+                    }
+                }
+
+                // Удаляем собранный предмет
                 Matter.World.remove(world, otherBody);
                 collectibles = collectibles.filter(c => c.body !== otherBody);
             }
@@ -444,17 +541,35 @@ function updateScore() {
     const lang = translations[language];
     let scoreElement = document.getElementById('score-display');
     scoreElement.innerText = lang.score + score;
+    if (score >= 3) { // Условие победы
+        endGame(true);
+    }
+}
+
+// Обновление счётчика 'milk'
+function updateMilkCount() {
+    // Вы можете отображать счётчик 'milk' в UI, если хотите
+    // Например:
+    // let milkElement = document.getElementById('milk-count');
+    // if (milkElement) {
+    //     milkElement.innerText = `Milk: ${milkCount}`;
+    // }
 }
 
 // Завершение игры
 function endGame(victory) {
     isGameOver = true;
     const lang = translations[language];
-    document.getElementById('end-title').innerText = lang.defeat;
+    if (victory) {
+        document.getElementById('end-title').innerText = lang.victory;
+    } else {
+        document.getElementById('end-title').innerText = lang.defeat;
+    }
     document.getElementById('restart-button').innerText = lang.restartGame;
     document.getElementById('end-popup').style.display = 'flex';
     document.getElementById('game-canvas').style.display = 'none';
     clearInterval(gameTimer);
+    clearInterval(coinSpawnIntervalId); // Очищаем интервал спавна 'coin'
 
     Matter.Engine.clear(engine);
     Matter.Render.stop(render);
@@ -467,7 +582,8 @@ function endGame(victory) {
 
 // Перезапуск игры
 function restartGame() {
-    clearInterval(gameTimer); 
+    clearInterval(gameTimer);
+    clearInterval(coinSpawnIntervalId); // Очищаем интервал спавна 'coin'
     document.getElementById('end-popup').style.display = 'none';
     document.getElementById('game-canvas').style.display = 'block';
     startTimer();
@@ -482,8 +598,8 @@ function renderScene() {
     // Отрисовка фона сначала
     context.drawImage(images.bg[bgFrameIndex], 0, 0, canvas.width, canvas.height);
 
-    // Отрисовка дороги
-    //drawRoad(context);
+    // Отрисовка дороги (можно раскомментировать, если нужна дорога)
+    // drawRoad(context);
 
     // Отрисовка объектов
     drawObjects(context, obstacles, 'obstacle');
@@ -508,7 +624,7 @@ function updateBackgroundAnimation() {
     }
 }
 
-// Функция для отрисовки дороги
+// Функция для отрисовки дороги (не используется, но оставлена для возможного использования)
 function drawRoad(context) {
     // Рисуем фон дороги
     context.fillStyle = '#555';
@@ -644,13 +760,13 @@ function resizeCanvas() {
         OBSTACLE_SIZE = canvas.height * OBSTACLE_SIZE_RATIO;
         COLLECTIBLE_SIZE = canvas.height * COLLECTIBLE_SIZE_RATIO;
 
-        //console.log('lanes:', lanes);
-        //console.log('topLanes:', topLanes);
-        //console.log('horizonY:', horizonY);
-        //console.log('spawnY:', spawnY);
-        //console.log('PLAYER_SIZE:', PLAYER_SIZE);
-        //console.log('OBSTACLE_SIZE:', OBSTACLE_SIZE);
-        //console.log('COLLECTIBLE_SIZE:', COLLECTIBLE_SIZE);
+        console.log('lanes:', lanes);
+        console.log('topLanes:', topLanes);
+        console.log('horizonY:', horizonY);
+        console.log('spawnY:', spawnY);
+        console.log('PLAYER_SIZE:', PLAYER_SIZE);
+        console.log('OBSTACLE_SIZE:', OBSTACLE_SIZE);
+        console.log('COLLECTIBLE_SIZE:', COLLECTIBLE_SIZE);
 
         // Обновляем позицию игрока
         if (player) {
