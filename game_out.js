@@ -659,11 +659,12 @@
         let context = render.context;
         context.clearRect(0, 0, canvas.width, canvas.height);
     
-        // Отрисовка фона сначала
-        context.drawImage(images.bg[bgFrameIndex], 0, 0, canvas.width, canvas.height);
-    
-        // Отрисовка дороги (можно раскомментировать, если нужна дорога)
-        // drawRoad(context);
+        // Проверяем, что фоновое изображение загружено и не повреждено
+        if (images.bg[bgFrameIndex] && images.bg[bgFrameIndex].complete && !images.bg[bgFrameIndex].broken) {
+            context.drawImage(images.bg[bgFrameIndex], 0, 0, canvas.width, canvas.height);
+        } else {
+            console.warn(`Фоновое изображение bg${bgFrameIndex}.png не загружено или повреждено.`);
+        }
     
         // Отрисовка объектов
         drawObjects(context, obstacles, 'obstacle');
@@ -675,6 +676,7 @@
         // Обновляем анимацию фона
         updateBackgroundAnimation();
     }
+    
 
     // Функция для обновления анимации фона
     function updateBackgroundAnimation() {
