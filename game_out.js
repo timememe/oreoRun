@@ -112,7 +112,7 @@
         images.bg = [];
         for (let i = 1; i <= 9; i++) {
             images.bg[i] = new Image();
-            images.bg[i].src = `assets/bg${i}.png`;
+            images.bg[i].src = `https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/bg${i}.png`;
         }
     }
 
