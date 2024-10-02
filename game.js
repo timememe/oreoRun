@@ -43,16 +43,18 @@ const translations = {
         victory: "You Win!",
         defeat: "Game Over",
         restartGame: "Restart Game",
-        score: "Score: \n"
+        score: "Score: \n",
+        backButtonText: "Back"
     },
     ru: {
-        gameTitle: "Бесконечный Раннер",
-        tutorialText: "Избегайте препятствий и собирайте предметы! \n Используйте стрелки для смены полосы.",
+        gameTitle: "Инструкция",
+        tutorialText: "Избегайте препятствий и соберите предметы! \n Используйте стрелки для смены полосы.",
         startGame: "Начать игру",
         victory: "Вы выиграли!",
-        defeat: "Игра окончена",
+        defeat: "Не вышло, попробуйте снова!",
         restartGame: "Начать заново",
-        score: "Счет: \n"
+        score: "Счет: \n",
+        backButtonText: "Назад"
     },
     // Добавьте остальные переводы...
 };
@@ -115,6 +117,7 @@ function initUI() {
     document.getElementById('game-title').innerText = lang.gameTitle;
     document.getElementById('tutorial-text').innerText = lang.tutorialText;
     document.getElementById('start-button').innerText = lang.startGame;
+    document.getElementById('back-button').innerText = lang.backButtonText;
     document.getElementById('end-title').innerText = '';
     document.getElementById('restart-button').innerText = '';
     document.getElementById('end-popup').style.display = 'none';
