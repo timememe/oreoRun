@@ -1,5 +1,6 @@
 // Глобальные настройки игры
 let language = 'ru';
+let currentLanguage = document.getAttribute('lang');
 let gameSpeed = 0.1; // Скорость движения объектов
 
 // Разделение полос
@@ -47,21 +48,52 @@ const translations = {
         victory: "You Win!",
         defeat: "Game Over",
         restartGame: "Restart Game",
-        score: "Score: \n",
+        score: "Score: ",
         backButtonText: "Back"
     },
     ru: {
-        gameTitle: "Инструкция",
-        tutorialText: "Избегайте препятствий и пройдите 3 контрольные арки! \n Используйте стрелки для смены полосы.",
+        gameTitle: "Бесконечный Раннер",
+        tutorialText: "Избегайте препятствий и собирайте предметы! \n Используйте стрелки для смены полосы.",
         startGame: "Начать игру",
         victory: "Вы выиграли!",
-        defeat: "Не вышло, попробуйте снова!",
+        defeat: "Игра окончена",
         restartGame: "Начать заново",
-        score: "Арки: \n",
+        score: "Счет: ",
         backButtonText: "Назад"
     },
-    // Добавьте остальные переводы...
+    ka: { // Грузинский
+        gameTitle: "შეცდომის გაუმტვნელი",
+        tutorialText: "გაუმტვლი დაბრკოლებები და შეაგროვეთ ნივთები! \n გამოიყენეთ ფერთების გასვლას.",
+        startGame: "დაიწყეთ თამაში",
+        victory: "თქვენ გაიმარჯვეთ!",
+        defeat: "თამაშის დასრულება",
+        restartGame: "თავიდან დაიწყეთ",
+        score: "ქულა: ",
+        backButtonText: "უკან"
+    },
+    kk: { // Казахский
+        gameTitle: "Шексіз Жүгіріс",
+        tutorialText: "Кедергілерден аулақ болыңыз және заттарды жинаңыз! \n Қарақап жолдарды ауыстыру үшін түймелерді қолданыңыз.",
+        startGame: "Ойынды бастау",
+        victory: "Сіз жеңдіңіз!",
+        defeat: "Ойын аяқталды",
+        restartGame: "Қайта бастау",
+        score: "Ұпай: ",
+        backButtonText: "Артқа"
+    },
+    uz: { // Узбекский
+        gameTitle: "Cheksiz Yuguruvchi",
+        tutorialText: "To'siqlardan qoching va narsalarni yig'ing! \n Yo'nalishlarni almashtirish uchun o'q tugmalaridan foydalaning.",
+        startGame: "O'yinni boshlash",
+        victory: "Siz yutdingiz!",
+        defeat: "O'yin tugadi",
+        restartGame: "Yana boshlash",
+        score: "Ball: ",
+        backButtonText: "Orqaga"
+    },
+    // Добавьте остальные переводы, если необходимо...
 };
+
 
 // Изображения
 let images = {};
@@ -117,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Инициализация UI
 function initUI() {
     bgFrameIndex = 9; // Отображаем bg9.png перед стартом игры
-    const lang = translations[language];
+    const lang = translations[currentLanguage];
     document.getElementById('game-title').innerText = lang.gameTitle;
     document.getElementById('tutorial-text').innerText = lang.tutorialText;
     document.getElementById('start-button').innerText = lang.startGame;
