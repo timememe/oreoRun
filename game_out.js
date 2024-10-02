@@ -37,8 +37,6 @@
     let milkCount = 0; // Счётчик собранных milk
     let coinSpawnIntervalId = null; // ID интервала для спавна coin
 
-    const topBackgroundURL = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/logo.png'; 
-
     // Переводы
     const translations = {
         en: {
@@ -95,26 +93,66 @@
     };
 
     // Изображения
-    let images = {};
-    function preloadImages() {
+    let imagesLoaded = 0;
+    const totalImages = 13; // 1 player + 1 wall + 1 coin + 1 milk + 9 bg + 1 logo
+    
+    const baseURL = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/';
+    const topBackgroundURL = `${baseURL}logo.png`; 
+    
+    function preloadImages(callback) {
         images.player = new Image();
-        images.player.src = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/player.png';
+        images.player.src = `${baseURL}player.png`;
+        images.player.onload = incrementLoad;
+        images.player.onerror = handleImageError;
     
         images.wall = new Image();
-        images.wall.src = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/wall.png';
+        images.wall.src = `${baseURL}wall.png`;
+        images.wall.onload = incrementLoad;
+        images.wall.onerror = handleImageError;
     
         images.coin = new Image();
-        images.coin.src = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/coin.png';
+        images.coin.src = `${baseURL}coin.png`;
+        images.coin.onload = incrementLoad;
+        images.coin.onerror = handleImageError;
     
         images.milk = new Image();
-        images.milk.src = 'https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/milk.png';
+        images.milk.src = `${baseURL}milk.png`;
+        images.milk.onload = incrementLoad;
+        images.milk.onerror = handleImageError;
     
         images.bg = [];
         for (let i = 1; i <= 9; i++) {
             images.bg[i] = new Image();
-            images.bg[i].src = `https://cdn.jsdelivr.net/gh/timememe/oreorun@main/assets/bg${i}.png`;
+            images.bg[i].src = `${baseURL}bg${i}.png`;
+            images.bg[i].onload = incrementLoad;
+            images.bg[i].onerror = handleImageError;
+        }
+    
+        // Загружаем topBackground
+        images.topBackground = new Image();
+        images.topBackground.src = topBackgroundURL;
+        images.topBackground.onload = incrementLoad;
+        images.topBackground.onerror = handleImageError;
+    
+        function incrementLoad() {
+            imagesLoaded++;
+            console.log(`Изображение загружено: ${imagesLoaded}/${totalImages}`);
+            if (imagesLoaded === totalImages) {
+                console.log('Все изображения загружены.');
+                callback();
+            }
+        }
+    
+        function handleImageError(event) {
+            console.error(`Ошибка загрузки изображения: ${event.target.src}`);
+            imagesLoaded++;
+            if (imagesLoaded === totalImages) {
+                console.log('Все изображения загружены с ошибками.');
+                callback();
+            }
         }
     }
+    
 
     // Переменные для фоновой анимации
     let bgFrameIndex = 9; // Начинаем с bg9.png перед стартом игры
@@ -128,22 +166,22 @@
         ctx = canvas.getContext('2d');
     
         // Предзагрузка изображений
-        preloadImages();
+        preloadImages(() => {
+            // Все изображения загружены, инициализируем UI
+            initUI();
     
-        // Инициализация UI
-        initUI();
+            // Изменение размера canvas
+            resizeCanvas();
     
-        // Изменение размера canvas
-        resizeCanvas();
+            // Добавление обработчиков событий
+            window.addEventListener('resize', resizeCanvas);
+            document.getElementById('start-button').addEventListener('click', startGame);
+            document.getElementById('restart-button').addEventListener('click', restartGame);
     
-        // Добавление обработчиков событий
-        window.addEventListener('resize', resizeCanvas);
-        document.getElementById('start-button').addEventListener('click', startGame);
-        document.getElementById('restart-button').addEventListener('click', restartGame);
-    
-        // Обработчик нажатия клавиш
-        document.addEventListener('keydown', handleKeyDown);
-    });
+            // Обработчик нажатия клавиш
+            document.addEventListener('keydown', handleKeyDown);
+        });
+    });    
 
     // Инициализация UI
     function initUI() {
