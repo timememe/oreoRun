@@ -293,7 +293,12 @@
         document.getElementById('start-popup').style.display = 'flex';
         document.getElementById('game-canvas').style.display = 'none';
     
-        // Создаем элемент для отображения счета
+        // Добавляем обработчик событий для кнопки "назад"
+        document.getElementById('back-button').addEventListener('click', function() {
+            window.location = "/profile";
+        });
+    
+        // Остальной код функции остается без изменений
         let scoreElement = document.getElementById('score-display');
         if (!scoreElement) {
             scoreElement = document.createElement('div');
@@ -308,7 +313,6 @@
         }
         scoreElement.innerText = lang.score + '0';
     
-        // Создаем элемент для отображения таймера (если необходимо)
         let timerElement = document.getElementById('timer-value');
         if (!timerElement) {
             timerElement = document.createElement('div');
@@ -321,7 +325,7 @@
             timerElement.style.textShadow = '1px 1px 2px #000';
             document.getElementById('game-container').appendChild(timerElement);
         }
-        timerElement.innerText = '1:00'; // Начальное значение (если используется)
+        timerElement.innerText = '1:00';
     
         let topBackground = document.getElementById('top-background');
         if (!topBackground) {
@@ -333,7 +337,7 @@
             topBackground.style.left = '0';
             topBackground.style.width = '100%';
             topBackground.style.height = 'auto';
-            topBackground.style.zIndex = '0'; // За канвасом
+            topBackground.style.zIndex = '0';
             document.getElementById('game-container').appendChild(topBackground);
         }
     }
