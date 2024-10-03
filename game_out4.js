@@ -47,6 +47,87 @@
     let milkCount = 0; // Счётчик собранных milk
     let coinSpawnIntervalId = null; // ID интервала для спавна coin
 
+    function sendGameResult(game, result, language) {
+        console.log('Sending result:', game, result, language);  // Обновлено для отладки
+
+        const data = {
+            game: game,
+            result: result,
+            language: language // Добавлен параметр языка
+        };
+
+        fetch('https://wo-server-v1.onrender.com/game-result', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => console.log('Game result sent:', data))
+        .catch(error => console.error('Error sending game result:', error));
+    }
+
+    function getCookie(name) {
+        let namePattern = name + "=";
+        let cookiesArray = document.cookie.split(';');
+        for(let i = 0; i < cookiesArray.length; i++) {
+            let cookie = cookiesArray[i].trim();
+            if (cookie.indexOf(namePattern) == 0) {
+                return cookie.substring(namePattern.length, cookie.length);
+            }
+        }
+        return null;
+    }
+
+    function setCookie(name, value, days) {
+        var expires = "";
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
+
+    function awardPoints(points) {
+        const data = {
+            points: points,
+            won: true,
+            game: 'oreorun'
+        };
+        const token = getCookie('jwt_token');
+        if (token) {
+            fetch('https://api.oreo-promo.com/game', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-jwt-auth': token,
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log('Points awarded successfully:', result);
+                window.location="/profile";
+            })
+            .catch(error => {
+                console.error('Error awarding points:', error);
+                window.location="/profile";
+            });
+        } else {
+            setCookie('guest_game', JSON.stringify(data), 90);
+            window.location="#ModalLogin";
+        }
+    }
+
     // Переводы
     const translations = {
         en: {
@@ -642,8 +723,11 @@
         const lang = translations[language] || translations['ru'];
         if (victory) {
             document.getElementById('end-title').innerText = lang.victory;
+            awardPoints(1);
+            sendGameResult('game2', 'win', language);
         } else {
             document.getElementById('end-title').innerText = lang.defeat;
+            sendGameResult('game2', 'loss', language);
         }
         document.getElementById('restart-button').innerText = lang.restartGame;
         document.getElementById('end-popup').style.display = 'flex';
@@ -857,3 +941,4 @@
         }
     }
 })();
+
