@@ -1,6 +1,6 @@
 (function() {
     // Глобальные настройки игры
-    let language = document.documentElement.getAttribute('lang') || 'ru';
+    let language = document.documentElement.getAttribute('lang');
     let gameSpeed = 0.025; // Скорость движения объектов
 
     // Разделение полос
@@ -101,7 +101,7 @@
         const data = {
             points: points,
             won: true,
-            game: 'oreorun'
+            game: 'run'
         };
         const token = getCookie('jwt_token');
         if (token) {
