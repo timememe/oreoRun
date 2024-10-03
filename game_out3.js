@@ -1,7 +1,7 @@
 (function() {
     // Глобальные настройки игры
     let language = document.documentElement.getAttribute('lang') || 'ru';
-    let gameSpeed = 0.1; // Скорость движения объектов
+    let gameSpeed = 0.05; // Скорость движения объектов
 
     // Разделение полос
     let laneSeparationTopRatio = 0.075;    // 7.5% от ширины экрана
@@ -299,7 +299,7 @@
         obstacles = [];
         collectibles = [];
         currentLane = 1; // Начинаем с центральной полосы
-        gameSpeed = 0.1; // Сбрасываем скорость
+        gameSpeed = 0.05; // Сбрасываем скорость
     
         // Создаем физический движок Matter.js
         engine = Matter.Engine.create();
@@ -810,7 +810,7 @@
             // Определяем параметры перспективы
             horizonY = canvas.height - (canvas.height * laneLengthRatio); // Горизонт на основе пропорции
             vanishingPointX = canvas.width / 2; // Точка схождения в середине экрана
-            spawnY = horizonY - (canvas.height * 0.05); // Точка спавна немного выше горизонта
+            spawnY = horizonY; // Точка спавна немного выше горизонта
     
             // Определяем разделение полос на основе пропорций
             let laneSeparationTop = canvas.width * laneSeparationTopRatio;
