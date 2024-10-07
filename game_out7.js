@@ -1,6 +1,16 @@
 (function() {
     // Глобальные настройки игры
     let language = document.documentElement.getAttribute('lang');
+    
+    if (language === 'kk') {
+        language = 'kz';
+    } else if (language === 'ka') {
+        language = 'ge';
+    } else if (language === 'uz') {
+        language = 'az';
+    }
+
+
     let gameSpeed = 0.025; // Скорость движения объектов
 
     // Разделение полос
@@ -26,7 +36,12 @@
     let topLanes = [];  // Массив для хранения координат полос (верхняя часть)
     let currentLane = 1; // Текущая полоса (0 - левая, 1 - средняя, 2 - правая)
     let score = 0;
-    
+
+    // Добавьте эти переменные в глобальную область
+    let touchStartX = null;
+    let touchStartY = null;
+    let touchEndX = null;
+    let touchEndY = null;    
 
     let images = {
         player: null,
@@ -276,6 +291,8 @@
     
             // Обработчик нажатия клавиш
             document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('touchstart', handleTouchStart, false);
+            document.addEventListener('touchend', handleTouchEnd, false);
         });
     });    
 
@@ -699,6 +716,48 @@
             }
         }
     }
+
+    function handleTouchStart(event) {
+        const firstTouch = event.touches[0];
+        touchStartX = firstTouch.clientX;
+        touchStartY = firstTouch.clientY;
+    }
+    
+    function handleTouchEnd(event) {
+        if (!touchStartX || !touchStartY) {
+            return;
+        }
+    
+        touchEndX = event.changedTouches[0].clientX;
+        touchEndY = event.changedTouches[0].clientY;
+    
+        let diffX = touchStartX - touchEndX;
+        let diffY = touchStartY - touchEndY;
+    
+        // Проверяем, был ли свайп по горизонтали
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
+            if (diffX > 0) {
+                // Свайп влево
+                if (currentLane > 0) {
+                    currentLane--;
+                    updatePlayerPosition();
+                }
+            } else {
+                // Свайп вправо
+                if (currentLane < lanes.length - 1) {
+                    currentLane++;
+                    updatePlayerPosition();
+                }
+            }
+        }
+    
+        // Сброс значений
+        touchStartX = null;
+        touchStartY = null;
+        touchEndX = null;
+        touchEndY = null;
+    }
+    
 
     // Обновление счета
     function updateScore() {
